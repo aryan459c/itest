@@ -1,22 +1,3 @@
-def initializeEnvironment(){
-    echo "initializeEnvironment"
-    def constantJson
-
-    if(isUnix()){
-       constantJson = readJSON file: "${WORKSPACE}/TestAutomation/Framework/JenkinsScripts/Constants.json"
-    } else {
-        constantJson = readJSON file: "${WORKSPACE}\\TestAutomation\\Framework\\JenkinsScripts\\Constants.json"
-    }
-
-    env.RoomId                   =   "${constantJson.ROOM_ID.CCE}"
-    env.TestManagerServer        =   "${constantJson.TestManagerServer}"
-    env.CCE_RELEASE_NUMBER       =   "R_15.0.2"
-    env.JENKINS_BUILD_NUMBER     =   "RUN_${BUILD_NUMBER}"
-    env.UTILS_SCRIPT             =   "${WORKSPACE}${constantJson.UTILS_SCRIPT}"
-    env.AUTOMATION_SCRIPT        =   "${WORKSPACE}${constantJson.AUTOMATION_SCRIPT}"
-    env.UCCE_AUTO_HOME_DIR       =   "${constantJson.UCCE_AUTO_HOME_DIR}"
-}
-
 
 pipeline{
     stages{
