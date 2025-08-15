@@ -5,25 +5,6 @@ pipeline{
       //GIT pull on worker
         stage('Git Pull with Checkout Branch'){
             steps {
-                timestamps {
-                   echo "START stage:${env.STAGE_NAME}"
-                    script {
-                        // Retrieve the list of labels from the properties
-                        def nodeList = ListofNodes.split(',')
-    
-                        parallel nodeList.collectEntries {
-                            label ->
-                            ["Executing on ${label}" : {
-                                node(label) {
-                                    // Below Code to be executed on each label
-                                        dir('c://ucce_auto'){
-                                        checkout([$class: 'GitSCM',
-                                        branches: [[name: "${BRANCH_NAME}"]],
-                                        userRemoteConfigs: [[url: 'git@github4-chn.cisco.com:ccbu-ucce/ucce_auto.git']]])
-									}
-                                }
-                            }]
-                        }
                     }
                     echo "END stage:${env.STAGE_NAME}"
                 }
