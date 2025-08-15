@@ -1,62 +1,130 @@
-pipeline {
-    agent any
+def initializeEnvironment(){
+    echo "initializeEnvironment"
+    def constantJson
 
-    environment {
-        // Defining environment variables
-        MY_VAR = 'Hello Jenkins'
-        BUILD_DATE = "${new Date().format('yyyy-MM-dd HH:mm:ss')}"
+    if(isUnix()){
+       constantJson = readJSON file: "${WORKSPACE}/TestAutomation/Framework/JenkinsScripts/Constants.json"
+    } else {
+        constantJson = readJSON file: "${WORKSPACE}\\TestAutomation\\Framework\\JenkinsScripts\\Constants.json"
     }
 
-    stages {
-        stage('Preparation') {
+    env.RoomId                   =   "${constantJson.ROOM_ID.CCE}"
+    env.TestManagerServer        =   "${constantJson.TestManagerServer}"
+    env.CCE_RELEASE_NUMBER       =   "R_15.0.2"
+    env.JENKINS_BUILD_NUMBER     =   "RUN_${BUILD_NUMBER}"
+    env.UTILS_SCRIPT             =   "${WORKSPACE}${constantJson.UTILS_SCRIPT}"
+    env.AUTOMATION_SCRIPT        =   "${WORKSPACE}${constantJson.AUTOMATION_SCRIPT}"
+    env.UCCE_AUTO_HOME_DIR       =   "${constantJson.UCCE_AUTO_HOME_DIR}"
+}
+
+
+pipeline{
+    stages{
+
+      //GIT pull on worker
+        stage('Git Pull with Checkout Branch'){
             steps {
-                script {
-                    echo "Starting build process"
-                    echo "Build initiated at: ${env.BUILD_DATE}"
+                timestamps {
+                   echo "START stage:${env.STAGE_NAME}"
+                    script {
+                        // Retrieve the list of labels from the properties
+                        def nodeList = ListofNodes.split(',')
+    
+                        parallel nodeList.collectEntries {
+                            label ->
+                            ["Executing on ${label}" : {
+                                node(label) {
+                                    // Below Code to be executed on each label
+                                        dir('c://ucce_auto'){
+                                        checkout([$class: 'GitSCM',
+                                        branches: [[name: "${BRANCH_NAME}"]],
+                                        userRemoteConfigs: [[url: 'git@github4-chn.cisco.com:ccbu-ucce/ucce_auto.git']]])
+									}
+                                }
+                            }]
+                        }
+                    }
+                    echo "END stage:${env.STAGE_NAME}"
                 }
             }
         }
+        //End of Git Pull
 
-        stage('Build') {
-            steps {
-                echo "Building the project..."
-                // Add build commands here, e.g.:
-                // sh 'mvn clean install'
+        //Reverting VM Snapshot With Validating
+        stage('Revert Snapshot of ICM machines.. with Validating'){
+            steps{
+                script{
+                    echo 'Reverting changes and validating..'
+                    
+                }
             }
         }
+        //End of Reverting VM Snapshot With Validating
 
-        stage('Test') {
-            steps {
-                echo "Running tests..."
-                // Add testing commands here, e.g.:
-                // sh 'mvn test'
+        //Install ES on VM
+        stage('Install ES on VM with Validating'){
+            steps{
+                script{
+                    echo 'ES Install...!'
+                }
+                
             }
         }
+        //End Of ES Install
 
-        stage('Deploy') {
-            steps {
-                echo "Deploying the application..."
-                // Add deployment commands here, e.g.:
-                // sh './deploy.sh'
-            }
-        }
+        //Atomation Suit Triggring
+        stage('Automation Suite Triggering'){
+            parallel failFast:true,        //Fail any parallel stage --> stop all
+            stages:[
+                //Start Common Ground Suite
+                stage('Common Ground'){
+                    steps{
+                        echo 'Running Common Ground automation suite..'
 
-        stage('Completion') {
-            steps {
-                echo "Build completed successfully"
-            }
+                    }
+                }
+                //End Common Ground Suite
+
+                //Parallel Execution (Admin Client + ISE Client)
+                stage('Admin Client & ISE Client Parallel'){
+                    parallel{
+                        //Admin Client Suite
+                        stage('Admin Client Install'){
+                            steps{
+                                echo 'Instaling Admin Clien...'
+                            }
+                        }
+                        //End of Admin Client Suite
+
+                        //ISE Client Suite
+                        stage('ISE Client Install'){
+                            steps{
+                                echo 'Installing ISE Client . . .'
+
+                            }
+                        }
+                        //End of ISE Client Suite
+                    }
+                    //End of parallel Execution
+                }
+
+                //ICM Uninstall Automation
+                stage('ICM Uninstall Automation'){
+                    steps{
+                        echo 'Running ICM uninstall automation. . .'
+
+                    }
+                }
+                //End of ICM Uninstall Automation
+            ]
         }
     }
-
-    post {
-        always {
-            echo "This will run regardless of success or failure."
+    post{
+        success{
+            echo 'Pipeline completed successfully!'
         }
-        success {
-            echo "The pipeline ran successfully."
-        }
-        failure {
-            echo "The pipeline failed."
+        failure{
+            echo 'Pipeline failed Please check logs'
         }
     }
 }
