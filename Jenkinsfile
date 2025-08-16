@@ -32,20 +32,18 @@ pipeline {
                 }
 
                 stage('Admin Client & ISE Client Parallel') {
-                    parallel {
-                        failFast true
-
-                        stage('Admin Client Install') {
-                            steps {
-                                echo 'Installing Admin Client...'
-                                // error("For testing failFast: failing Admin") 
-                            }
-                        }
-
-                        stage('ISE Client Install') {
-                            steps {
-                                echo 'Installing ISE Client...'
-                            }
+                    steps {
+                        script {
+                            parallel (
+                                failFast: true,
+                                "Admin Client Install": {
+                                    echo 'Installing Admin Client...'
+                                    // error("Failing Admin for test") // uncomment to test failFast
+                                },
+                                "ISE Client Install": {
+                                    echo 'Installing ISE Client...'
+                                }
+                            )
                         }
                     }
                 }
