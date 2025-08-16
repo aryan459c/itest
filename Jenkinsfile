@@ -5,8 +5,9 @@ pipeline{
       //GIT pull on worker
         stage('Git Pull with Checkout Branch'){
             steps {
+                echo "gitpull "
                     }
-                    echo "END stage:${env.STAGE_NAME}"
+                    echo "END stage"
                 }
             }
         }
