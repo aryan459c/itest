@@ -6,6 +6,14 @@ pipeline {
         stage('Git Pull with Checkout Branch') {
             steps {
                 echo "git pull..."
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'git@github.com:aryan459c/itest.git',
+                        credentialsId: 'ti'
+                    ]]
+                ])
                 echo "END stage"
             }
         }
