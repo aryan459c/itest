@@ -6,6 +6,7 @@ pipeline {
         stage('Git Pull with Checkout Branch') {
             steps {
                 echo "git pull..."
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'ti', url: 'git@github.com:aryan459c/itest.git']])
                 echo "END stage"
             }
         }
